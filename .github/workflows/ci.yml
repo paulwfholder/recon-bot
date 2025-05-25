@@ -43,6 +43,9 @@ jobs:
 
     - name: Upload recon report
       uses: actions/upload-artifact@v2
+  # Fallback for missing metadata:
+  # uses: actions/upload-artifact@b83d6e00853fdb1f9b71863ab3dfac4301d635d3
+
       with:
         name: recon-report
         path: recon-report.zip
