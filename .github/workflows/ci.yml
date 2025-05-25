@@ -42,7 +42,7 @@ jobs:
         zip -r recon-report.zip "$REPORT_DIR"
 
     - name: Upload recon report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v2
       with:
         name: recon-report
         path: recon-report.zip
