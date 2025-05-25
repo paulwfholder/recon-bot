@@ -1,6 +1,7 @@
 name: ReconBot Shell CI
 
 on:
+  workflow_dispatch:  # manually trigger from Actions tab
   push:
     branches:
       - main
@@ -10,11 +11,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repo
       uses: actions/checkout@v3
 
-    - name: Make recon.sh executable
-      run: chmod +x recon.sh
+    - name: Set up Go and PATH
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Install recon dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y chromium-browser ffuf nmap unzip wget
+        go install github.com/projectdiscovery/httpx/cmd/httpx@latest
+        go install github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
+        go install github.com/sensepost/gowitness@latest
+        echo "$HOME/go/bin" >> $GITHUB_PATH
+        mkdir -p $HOME/nuclei-templates
+        nuclei -update-templates || true
+
+    - name: Make recon script executable
+      run: chmod +x recon-bot.sh
 
     - name: Run recon bot
-      run: ./recon.sh
+      run: ./recon-bot.sh juice-shop.herokuapp.com
+
+    - name: Zip report results
+      run: |
+        REPORT_DIR=$(find recon-output -type d -name "*juice-shop*")
+        zip -r recon-report.zip "$REPORT_DIR"
+
+    - name: Upload recon report
+      uses: actions/upload-artifact@v3
+      with:
+        name: recon-report
+        path: recon-report.zip
