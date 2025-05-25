@@ -1,20 +1,24 @@
-name: ReconBot Shell CI
+name: ReconBot CI
 
 on:
-  workflow_dispatch:  # manually trigger from Actions tab
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # allow committing back
 
 jobs:
-  run-recon:
+  recon:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
-    - name: Set up Go and PATH
+    - name: Set up Go (for httpx, nuclei, gowitness)
       uses: actions/setup-go@v4
       with:
         go-version: '1.20'
@@ -41,11 +45,22 @@ jobs:
         REPORT_DIR=$(find recon-output -type d -name "*juice-shop*")
         zip -r recon-report.zip "$REPORT_DIR"
 
-    - name: Upload recon report
-      uses: actions/upload-artifact@v2
-  # Fallback for missing metadata:
-  # uses: actions/upload-artifact@b83d6e00853fdb1f9b71863ab3dfac4301d635d3
-
+    - name: Upload recon report artifact
+      uses: actions/upload-artifact@b83d6e00853fdb1f9b71863ab3dfac4301d635d3
       with:
         name: recon-report
         path: recon-report.zip
+
+    - name: Commit report.md back to repo
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        REPORT_PATH=$(find recon-output -type f -name report.md)
+        DEST="reports/recon-report-${GITHUB_RUN_NUMBER}.md"
+        mkdir -p reports
+        cp "$REPORT_PATH" "$DEST"
+        git add "$DEST"
+        git commit -m "Add recon report for run #${GITHUB_RUN_NUMBER}"
+        git push origin main
