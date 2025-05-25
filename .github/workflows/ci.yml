@@ -1,4 +1,4 @@
-name: ReconBot CI
+name: ReconBot Shell CI
 
 on:
   push:
@@ -6,22 +6,15 @@ on:
       - main
 
 jobs:
-  test:
+  run-recon:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+    - name: Make recon.sh executable
+      run: chmod +x recon.sh
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-
-    - name: Run recon check
-      run: |
-        python recon.py --test  # <-- Use your CLI flag or mock test case
+    - name: Run recon bot
+      run: ./recon.sh
